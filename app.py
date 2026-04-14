@@ -4,92 +4,72 @@ from sentence_transformers import SentenceTransformer, util
 import pickle
 import os
 
-# --- 1. PAGE CONFIGURATION ---
-st.set_page_config(page_title="Bio-NLP Search Engine", layout="wide")
+# --- 1. SETUP ---
+st.set_page_config(page_title="Bio-NLP Search", layout="wide")
 st.title("🧬 Biomedical Semantic Search")
-st.markdown("### Integrating Named Entity Recognition (NER) with Semantic Retrieval")
-
-# Helper to locate files in the GitHub/Local environment
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def get_path(filename):
     return os.path.join(BASE_DIR, filename)
 
-# --- 2. DATA INTEGRATION (The "Glue") ---
+# --- 2. LOAD DATA ---
 @st.cache_data
-def load_and_group_data():
-    # Load the datasets from Person A and Person B
-    df = pd.read_csv(get_path('ner_results_fixed.csv'))
+def load_data():
+    ner_df = pd.read_csv(get_path('ner_results_fixed.csv'))
     bio_df = pd.read_csv(get_path('bioasq_output.csv'))
+    # Fix potential naming mismatch
+    bio_df['questions'] = bio_df['questions'].fillna("No Question")
     
-    # Group entities by the question text to create a mapping
-    # We use drop_duplicates so we don't get the same tag multiple times
-    abstracts_grouped = df.groupby(["question"]).apply(
-        lambda g: g[["entity", "type"]].drop_duplicates().to_dict("records")
-    ).reset_index(name="entities")
-    
-    # Connect the entities to the full abstracts/titles
-    final_data = pd.merge(
-        abstracts_grouped, 
-        bio_df[['questions', 'abstracts', 'titles']], 
-        left_on='question', 
-        right_on='questions', 
-        how='inner'
-    )
-    return final_data
+    entity_map = ner_df.groupby('question').apply(
+        lambda x: x[['entity', 'type']].to_dict('records')
+    ).to_dict()
+    return bio_df, entity_map
 
-# --- 3. SEARCH ENGINE ENGINE (Self-Healing Fail-safe) ---
+# --- 3. LOAD ENGINE (WITH EMERGENCY BACKUP) ---
 @st.cache_resource
-def load_search_engine(text_list):
-    # Using the high-accuracy MPNet model
+def load_engine(questions_list):
     model = SentenceTransformer('multi-qa-mpnet-base-dot-v1')
     pickle_path = get_path('embeddings.pkl')
     
+    # Try to load the file
     try:
-        # Try to load existing 'Brain' file
         with open(pickle_path, 'rb') as f:
             embeddings = pickle.load(f)
-        st.success("✅ Semantic Index Loaded.")
+        st.success("✅ Loaded pre-computed embeddings.")
     except Exception:
-        # Re-build if file is missing or corrupted
-        with st.spinner("⌛ Generating Semantic 'Brain' (First-time setup)..."):
-            embeddings = model.encode(text_list, convert_to_tensor=True, show_progress_bar=True)
+        # EMERGENCY BACKUP: If file is broken, we make it ourselves!
+        with st.spinner("⚠️ Embeddings file was broken. Re-generating 'Brain'... Please wait 2-3 minutes."):
+            embeddings = model.encode(questions_list, convert_to_tensor=True, show_progress_bar=True)
+            # Save a working version so it's fast next time
             with open(pickle_path, 'wb') as f:
                 pickle.dump(embeddings, f)
-        st.success("✨ New Index built successfully!")
+        st.success("✨ New 'Brain' generated and saved!")
+        
     return model, embeddings
 
-# --- 4. APPLICATION INTERFACE ---
-data = load_and_group_data()
-model, corpus_embeddings = load_search_engine(data['questions'].tolist())
+# --- 4. RUN APP ---
+bio_df, entity_map = load_data()
+model, corpus_embeddings = load_engine(bio_df['questions'].tolist())
 
-# Search Bar
-query = st.text_input("🔍 Ask a clinical or genetic question:", placeholder="e.g. Which genes are associated with speech development?")
+query = st.text_input("🔍 Search medical questions:", placeholder="e.g. Hirschsprung disease")
 
 if query:
-    # Convert query to vector and find top 5 matches
     query_emb = model.encode(query, convert_to_tensor=True)
     hits = util.semantic_search(query_emb, corpus_embeddings, top_k=5)[0]
     
-    st.markdown("---")
     for hit in hits:
         idx = hit['corpus_id']
         score = hit['score']
-        row = data.iloc[idx]
+        q_text = bio_df.iloc[idx]['questions']
+        abs_text = bio_df.iloc[idx]['abstracts']
         
-        with st.container():
-            col1, col2 = st.columns([5, 1])
-            
-            with col1:
-                st.subheader(row['questions'])
-                st.caption(f"**Title:** {row['titles']}")
-                st.write(row['abstracts'])
-                
-                # --- TAG SYSTEM ---
-                # Verify that the tagged entity actually appears in THIS abstract
-                abstract_lower = row['abstracts'].lower()
-                tags_html = ""
-                
-                for ent in row['entities']:
-                    entity_name = str(ent['entity']).lower()
+        with st.expander(f"Match {score:.1%} | {q_text[:80]}..."):
+            st.write(f"**Abstract:** {abs_text}")
+            if q_text in entity_map:
+                tags = ""
+                for e in entity_map[q_text]:
+                    color = "#e6f1fb" if e['type'] == 'Gene' else "#eaf3de"
+                    tags += f'<span style="background-color:{color}; padding:2px 8px; border-radius:10px; margin:2px; font-size:12px;">{e["entity"]} ({e["type"]})</span> '
+                st.markdown(tags, unsafe_allow_html=True)
                     
                     # Exact or
