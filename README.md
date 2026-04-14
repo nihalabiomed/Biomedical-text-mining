@@ -1,4 +1,3 @@
-
 # Biomedical-text-mining
 Project on biomedical text mining / NLP for genomics literature ie using AI/NLP to improve how research papers are searched and analyzed. 
 ## 🚀 Live Demo
@@ -32,5 +31,9 @@ Robust Backend: Implemented a "Self-Healing" fail-safe mechanism that automatica
 UI/UX Design: Built the interactive web interface using Streamlit, featuring real-time similarity scoring and colorful entity tagging.
 
 <img width="1440" height="900" alt="Screenshot 2026-04-14 at 3 02 00 PM" src="https://github.com/user-attachments/assets/4f5cab97-1402-4d04-8ffa-bf9c31e93682" />
+
+<img width="1440" height="900" alt="Screenshot 2026-04-14 at 3 23 56 PM" src="https://github.com/user-attachments/assets/e89d442b-ff6c-4805-bfba-ba67e3ef0e61" />
+
+
 
 Cloud Deployment: Orchestrated the CI/CD pipeline to host the application live on Streamlit Cloud with automated dependency management.
