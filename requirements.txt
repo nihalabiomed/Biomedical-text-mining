@@ -1,0 +1,43 @@
+# Bio-NLP Semantic Search — Model Requirements
+# Exact versions used to generate embeddings.pt / embeddings.pkl
+# and to run semantic_search.py
+#
+# Install with:
+#   pip install -r requirements.txt
+
+# ── Core model libraries ───────────────────────────────────────────────────────
+torch==2.11.0
+sentence-transformers==5.4.0
+transformers==5.5.4
+tokenizers==0.22.2
+
+# ── Numerical / vector search ──────────────────────────────────────────────────
+numpy==1.26.4
+scikit-learn==1.6.1
+faiss-cpu==1.7.4
+
+# ── Embedding serialisation ────────────────────────────────────────────────────
+safetensors==0.7.0
+
+# ── API (optional — only needed to run src/api.py) ────────────────────────────
+fastapi==0.110.0
+uvicorn==0.27.0
+pydantic==2.0.0
+
+# ── NER training (optional — only needed to run scripts/run_training.py) ──────
+datasets==2.18.0
+seqeval==1.2.2
+accelerate==0.27.0
+evaluate==0.4.1
+
+# ── Notes ─────────────────────────────────────────────────────────────────────
+# Python  : 3.9+
+# CUDA    : optional — CPU inference supported for both embedding and search
+# GPU     : CUDA 11.8+ recommended for training (set fp16=True in config.py)
+#
+# To use BioBERT as the sentence encoder (requires internet access to HuggingFace):
+#   model = SentenceTransformer("dmis-lab/biobert-base-cased-v1.2")
+#
+# The included embeddings.pt was generated using TF-IDF (768-dim) as a
+# compatible offline alternative. To regenerate with full BioBERT:
+#   python generate_embeddings.py
