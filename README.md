@@ -6,19 +6,19 @@ Access the live Bio-AI Semantic Search Engine here: [Biomedical Text Mining App]
 
 📋 Project Contributions:
 
-Phase 1: Data Acquisition & Pre-processing (Anagha)
+Phase 1: Data Acquisition & Pre-processing (Anagha- Person A)
 Curated a specialized biomedical dataset consisting of 2,291 research abstracts and clinical questions.
 
 Cleaned and formatted the raw BioASQ data into a structured CSV format suitable for machine learning pipelines.
 
 
-Phase 2: Bio-NER Pipeline (Sebin)
+Phase 2: Bio-NER Pipeline (Sebin- Person B)
 Developed a Named Entity Recognition (NER) system to identify biological entities within the text.
 
 Successfully categorized entities into Genes and Diseases, providing the foundation for our knowledge-tagging system.
 
 
-Phase 3: Transformer Model Selection (Uma)
+Phase 3: Transformer Model Selection (Uma Parvathy- person C)
 Evaluated multiple NLP models, selecting the multi-qa-mpnet-base-dot-v1 Sentence-Transformer for its high-performance semantic retrieval.
 Prototyped the tokenization and vectorization logic to convert medical text into mathematical "embeddings."
 
